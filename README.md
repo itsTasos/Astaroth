@@ -75,7 +75,14 @@ To compile Astaroth, ensure you have the following toolchain installed:
 
 ### Compilation
 
-Clone the repository and build the implant using the provided Makefile or manually compile via MSVC.
+Clone the repository and build the implant using the provided Makefile.
+
+Before compiling the implant, you must generate the RSA key pair used to secure the C2 communications.
+
+1. Run the included key generation script to generate your unique public/private key pair.
+2. The script will output a C-style byte array of your Public Key.
+3. Copy this key blob and paste it into the implant's source code (within the `Crypto\encryption.cpp`) replacing the default placeholder.
+4. Ensure the generated private key (`.pem` file) remains strictly on the Team Server side.
 
 ```powershell
 # Compile the implant
@@ -89,6 +96,15 @@ make
 python3 C2_server.py
 ```
 2. **Deploy the Implant:** Execute the compiled Astaroth executable on the target host. It will automatically resolve APIs, perform timestomping, install persistence, and beacon back to the Team Server.
+
+---
+---
+
+## Author's Note & Contributions
+
+I do not claim that Astaroth introduces groundbreaking, never-before-seen APT technologies. This project was born out of a desire to deeply understand Windows Internals, evasion mechanics, and low-level system programming. It is a research endeavor where I attempted to implement these complex concepts as robustly and cleanly as possible.
+
+Because this is a continuous learning process, the codebase is completely open to scrutiny. If you are a fellow researcher, developer, or reverse engineer, contributions are highly encouraged. Whether it's optimizing the Assembly stubs, refining the Native Heap management, or pointing out an OPSEC flaw I missed, feel free to open an Issue or submit a Pull Request.
 
 ---
 
