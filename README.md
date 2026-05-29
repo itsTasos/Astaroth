@@ -98,7 +98,6 @@ python3 C2_server.py
 2. **Deploy the Implant:** Execute the compiled Astaroth executable on the target host. It will automatically resolve APIs, perform timestomping, install persistence, and beacon back to the Team Server.
 
 ---
----
 
 ## Author's Note & Contributions
 
