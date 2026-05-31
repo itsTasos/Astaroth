@@ -24,20 +24,20 @@ Core idea: drop the high-level abstractions. By combining dynamic syscall resolu
 
 ## Core Features
 
-*   **[ ❖ ] Dynamic API Resolution & Direct System Calls**
+*   **Dynamic API Resolution & Direct System Calls**
     *   No static imports. Windows APIs are resolved dynamically at runtime using custom string hashing.
     *   Implements **Hell's Gate** and **Halo's Gate** to dynamically resolve SSNs and execute direct system calls, bypassing NTDLL unhooking and user-land EDR hooks.
-*   **[ ❖ ] Strict Native Memory Management & OPSEC**
+*   **Strict Native Memory Management & OPSEC**
     *   **Direct NTDLL Heap Allocation::** Bypasses standard kernel32.dll memory functions by dynamically resolving RtlAllocateHeap and RtlFreeHeap directly from the ntdll.dll subsystem.
     *   **Stack-Exhaustion Prevention:**  Eliminates brittle stack allocations in favor of robust Native Heap management. This ensures stability during large I/O operations without triggering STATUS_STACK_OVERFLOW exceptions.
     *   **Telemetry Reduction:** By operating memory allocations at the lowest possible User-Mode layer, it evades the standard API hooking and memory-scanning telemetry associated with high-level C-Runtime (CRT) or Win32 memory APIs.
-*   **[ ❖ ] Stealth & Evasion**
+*   **Stealth & Evasion**
     *   **Timestomping:** Clones creation, access, and write times from legitimate binaries (e.g., `kernel32.dll`) to blend in.
     *   **CRT Avoidance:** Uses custom implementations for standard library functions (`custom_memcpy`, `custom_wcsicmp`) to prevent hooks on C-Runtime calls.
     *   **Anti-Analysis:** Single-instance execution via mutex locks, hidden console windows, and a blacklist checker for suspicious processes (e.g., `MsMpEng.exe`, `wireshark.exe`).
-*   **[ ❖ ] In-Memory Evasion & Payload Execution**
+*   **In-Memory Evasion & Payload Execution**
     *   **Section-Based Injection:** Employs `NtCreateSection`, `NtMapViewOfSection`, and `NtCreateThreadEx` to map payloads locally as RW, then remotely into targets as RX, avoiding RWX memory pages.
-*   **[ ❖ ] Secure C2 Communications & Persistence**
+*   **Secure C2 Communications & Persistence**
     *   **RSA-AES Exchange:** Employs an RSA-exchanged AES-256 CBC encrypted channel (via Windows CNG APIs) for all commanding and beaconing.
     *   **Jitter Delays:** `smart_sleep` implementation for randomized beaconing jitter.
     *   **Silent Persistence:** Safe self-migration to `%APPDATA%` as a hidden/system file, establishing persistence via direct registry syscalls to the `UserInitMprLogonScript` environment variable.
