@@ -14,9 +14,7 @@
 
 ---
 
-## Project Philosophy
-
-Astaroth is a Great Duke of Hell, known for his deep knowledge of hidden things and his ability to reveal secrets. The Astaroth framework adopts this mythos as a technical metaphor for deep system introspection and environmental mastery.
+## Project Overview
 
 Astaroth is a custom C2 implant built from scratch to study how Endpoint Detection and Response (EDR) telemetry actually works under the hood. Instead of relying on standard Windows APIs that are easily hooked, it attempts to operate entirely at the Native API layer. 
 
