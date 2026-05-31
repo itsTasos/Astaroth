@@ -67,7 +67,7 @@ bool custom_wcsicmp(const wchar_t* str1, const wchar_t* str2) {
     return (*str1 == *str2);
 }
 
-//custom memory copy [avoid CRT/Hooks]
+//custom memory copy [avoid CRT hooks]
 void custom_memcpy(PVOID dest, const PVOID src, SIZE_T n) {
     char* d = (char*)dest;
     const char* s = (const char*)src;

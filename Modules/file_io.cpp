@@ -117,7 +117,8 @@ void Internal_Read(const wchar_t* filePath) {
 }
 
 
-//internal write
+//If file doesnt exist it will create it and if
+//it does exist it will overwrite it. Use with caution
 void Internal_Write(const wchar_t* filePath, const char* data) {
     HANDLE hFile;
     NTSTATUS status;

