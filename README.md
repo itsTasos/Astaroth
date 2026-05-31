@@ -18,7 +18,9 @@
 
 Astaroth is a Great Duke of Hell, known for his deep knowledge of hidden things and his ability to reveal secrets. The Astaroth framework adopts this mythos as a technical metaphor for deep system introspection and environmental mastery.
 
-Rather than relying on superficial User-Land abstractions, Astaroth acts as an advanced research testbed designed to reveal the hidden mechanics of Windows OS telemetry. By operating fundamentally below the radar of Endpoint Detection and Response (EDR) sensors, it rejects bloated frameworks in favor of surgical, low-level C++17 and handcrafted Assembly. Through the implementation of dynamic system calls (Hell’s Gate/Halo’s Gate), strict Native Heap memory management via ntdll.dll, and the complete decoupling from the Import Address Table (IAT), Astaroth demonstrates how returning to First Principles—interacting directly with the OS's lowest architectural levels—can systematically bypass modern heuristic analysis.
+Astaroth is a custom C2 implant built from scratch to study how Endpoint Detection and Response (EDR) telemetry actually works under the hood. Instead of relying on standard Windows APIs that are easily hooked, it attempts to operate entirely at the Native API layer. 
+
+Core idea: drop the high-level abstractions. By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE parsing, and direct NTDLL memory management, the payload aims to completely decouple itself from the Import Address Table (IAT) and standard user-land monitoring. It is a practical exercise in low-level evasion and C++17 system programming.
 
 ---
 
