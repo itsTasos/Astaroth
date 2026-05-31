@@ -1,6 +1,6 @@
 <div align="center">
   <h3><em>The Revealer of Secrets, The Architect of Shadows</em></h3>
-  <p>An advanced, low-level Command & Control implant bridging absolute stealth with complete environmental mastery.</p>
+  <p>A low-level Command & Control implant build for stealth and reconaisance.</p>
 </div>
 
 <br/>
@@ -101,9 +101,9 @@ python3 C2_server.py
 
 ## Author's Note & Contributions
 
-I do not claim that Astaroth introduces groundbreaking, never-before-seen APT technologies. This project was born out of a desire to deeply understand Windows Internals, evasion mechanics, and low-level system programming. It is a research endeavor where I attempted to implement these complex concepts as robustly and cleanly as possible.
+I do not claim that Astaroth introduces groundbreaking, never-before-seen APT technologies. It is a research endeavor where I attempted to implement these complex concepts as robustly and cleanly as possible.
 
-Because this is a continuous learning process, the codebase is completely open to scrutiny. If you are a fellow researcher, developer, or reverse engineer, contributions are highly encouraged. Whether it's optimizing the Assembly stubs, refining the Native Heap management, or pointing out an OPSEC flaw I missed, feel free to open an Issue or submit a Pull Request.
+Because this is a continuous learning process, the codebase is completely open to scrutiny. If you are a fellow researcher, developer, or reverse engineer, contributions are highly encouraged. Feel free to open an Issue or submit a Pull Request.
 
 ---
 
