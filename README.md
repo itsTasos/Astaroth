@@ -95,6 +95,30 @@ python3 C2_server.py
 ```
 2. **Deploy the Implant:** Execute the compiled Astaroth executable on the target host. It will automatically resolve APIs, perform timestomping, install persistence, and beacon back to the Team Server.
 
+Once a secure beacon session is established, the operator can interact with the target using the following commands. 
+
+### Reconnaissance & Enumeration
+
+| Command | Arguments | Description |
+| :--- | :--- | :--- |
+| `whoami` | None | Retrieves the current user context and domain information. |
+| `admin` | None | Checks the current process token for elevated (Administrator) privileges. |
+| `tasklist` | None | Enumerates currently running processes on the target system and detects critical ones running (e.g. Windows Defender). |
+
+### File System Operations
+
+| Command | Arguments | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `dir` | `[path]` | Lists directory contents. Defaults to the current working directory if no path is provided. | `dir C:\Users\Public` |
+| `cat` | `<file_path>` | Reads and outputs the contents of a specified file. | `cat C:\Windows\win.ini` |
+| `touch` | `<file_path>` `<data>` | Creates an empty file or overwrites an existing one. | `touch C:\temp\test.txt helllo` |
+
+### Implant Execution & Lifecycle Management
+
+| Command | Arguments | Description | Example |
+| :--- | :--- | :--- | :--- |
+| `inject` | `<process name>` `<payload id>` | Executes section-based memory injection into the specified target process. | `inject notepad.exe 1` |
+| `suicide` | None | Triggers the self-deletion routine, terminating the execution thread and safely wiping the implant from disk. | `suicide` |
 ---
 
 ## Author's Note & Contributions
