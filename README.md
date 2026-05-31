@@ -18,7 +18,7 @@
 
 Astaroth is a custom C2 implant built from scratch to study how Endpoint Detection and Response (EDR) telemetry actually works under the hood. Instead of relying on standard Windows APIs that are easily hooked, it attempts to operate entirely at the Native API layer. 
 
-Core idea: drop the high-level abstractions. By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE parsing, and direct NTDLL memory management, the payload aims to completely decouple itself from the Import Address Table (IAT) and standard user-land monitoring. It is a practical exercise in low-level evasion and C++17 system programming.
+Core idea: drop the high-level abstractions. By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE parsing, and direct NTDLL memory management, the payload aims to completely decouple itself from the Import Address Table (IAT) and standard user-land monitoring.
 
 ---
 
