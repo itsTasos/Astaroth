@@ -23,6 +23,8 @@ typedef int (WSAAPI *_closesocket)(SOCKET);
 typedef int (WSAAPI *_WSACleanup)(void);
 typedef int (WSAAPI *_setsockopt)(SOCKET, int, int, const char*, int);
 typedef int (WSAAPI *_WSAGetLastError)(void);
+typedef int (WSAAPI *_ioctlsocket)(SOCKET, long, u_long *);
+typedef int (WSAAPI *_select)(int, fd_set *, fd_set *, fd_set *, const timeval *);
 
 //Kernel32 TYPEDEFS
 typedef BOOL (WINAPI *_CreateProcessA)(LPCSTR, LPSTR, LPSECURITY_ATTRIBUTES, LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, LPCSTR, LPSTARTUPINFOA, LPPROCESS_INFORMATION);
@@ -95,6 +97,8 @@ struct API_TABLE {
     _WSACleanup  WSACleanup;
     _setsockopt  setsockopt;
     _WSAGetLastError    WSAGetLastError;
+    _ioctlsocket        ioctlsocket;
+    _select             select;
     
     // Kernel32
     _CreateProcessA         CreateProcessA;
