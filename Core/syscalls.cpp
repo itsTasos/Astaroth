@@ -28,7 +28,7 @@ SYSCALL_GATE GetSSNByHash(QWORD qFunctionHash) {
     SYSCALL_GATE gate = { 0 };
     
     //Find NTDLL
-    HMODULE hNtdll = (HMODULE)GetModuleBaseByHash(0XE1193D187E7EA30D);
+    HMODULE hNtdll = (HMODULE)GetModuleBaseByHash(0X571A46A16587BB7A);
     if (!hNtdll) return gate;
 
     //Read PE headers

