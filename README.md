@@ -18,7 +18,7 @@
 
 Astaroth is a custom C2 implant built from scratch to study how Endpoint Detection and Response (EDR) telemetry actually works under the hood. Instead of relying on standard Windows APIs that are easily hooked, it attempts to operate entirely at the Native API layer. 
 
-Core idea: drop the high-level abstractions. By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE parsing, and direct NTDLL memory management, the payload aims to completely decouple itself from the Import Address Table (IAT) and standard user-land monitoring.
+By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE parsing, and direct NTDLL memory management, the payload aims to completely decouple itself from the Import Address Table and standard user-land monitoring.
 
 ---
 
@@ -40,7 +40,7 @@ Core idea: drop the high-level abstractions. By combining dynamic syscall resolu
 *   **Secure C2 Communications & Persistence**
     *   **RSA-AES Exchange:** Employs an RSA-exchanged AES-256 CBC encrypted channel (via Windows CNG APIs) for all commanding and beaconing.
     *   **Jitter Delays:** `smart_sleep` implementation for randomized beaconing jitter.
-    *   **Silent Persistence:** Safe self-migration to `%APPDATA%` as a hidden/system file, establishing persistence via direct registry syscalls to the `UserInitMprLogonScript` environment variable.
+    *   **Silent Persistence:** Safe self-migration to a selected folder as a hidden/system file, establishing persistence via direct registry syscalls to the `UserInitMprLogonScript` environment variable.
 
 ---
 
@@ -55,7 +55,7 @@ The Astaroth codebase is modularized for rapid expansion and structured executio
     *   `recon`: Host enumeration, privilege checks, and native user SID retrieval.
     *   `injection`: Stealthy section-based process injection techniques.
     *   `persistence`: Registry-based survival mechanisms.
-    *   `suicide`: Self-deletion routine (`burn` command) to wipe the implant from disk.
+    *   `suicide`: Self-deletion routine to wipe the implant from disk.
 *   **`Network`**: `c2_server.cpp` manages bot-side network loops with exponential backoff and encrypted traffic routing.
 *   **`C2_Server.py`**: The Team Server backend written in Python 3. It utilizes a multithreaded architecture for asynchronous command broadcasting, interactive bot selection, and RSA/AES decryption of incoming traffic.
 
