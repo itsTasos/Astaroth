@@ -5,22 +5,22 @@
 #include <cstddef>
 
 //Syscall hashes (Nt* functions)
-#define HASH_NtCreateFile              0x18A7B1B2FB2E2AFBULL
-#define HASH_NtWriteFile               0x8C6245C2AEFC20D2ULL
-#define HASH_NtSetInformationFile      0xF74FD0B30EFD1299ULL
-#define HASH_NtCreateSection           0x0CB836324AC72AF0ULL
-#define HASH_NtClose                   0x4F3163BAF74EFD5DULL
-#define HASH_NtCreateProcessEx         0x1B9E889E2EED37D7ULL
-#define HASH_NtQueryInformationProcess 0x1EEA5D4868B92E82ULL
-#define HASH_NtReadVirtualMemory       0xEB7E1C5F98917D03ULL
-#define HASH_NtWriteVirtualMemory      0x3F92AD30366805B2ULL
-#define HASH_NtAllocateVirtualMemory   0x0E7C8C07D724ED6CULL
-#define HASH_NtCreateThreadEx          0xA3BEFC8698C66F50ULL
+#define HASH_NtCreateFile              0XB7211C63C61BC7FFULL
+#define HASH_NtWriteFile               0X3757ADB1A2DD0B4FULL
+#define HASH_NtSetInformationFile      0X9A2D59E5F3A964D1ULL
+#define HASH_NtCreateSection           0X6E867168A04D622FULL
+#define HASH_NtClose                   0X5E575BD8ACC77BC0ULL
+#define HASH_NtCreateProcessEx         0XAC1C9B9FF8F5F902ULL
+#define HASH_NtQueryInformationProcess 0XA1126CDAC1442E8EULL
+#define HASH_NtReadVirtualMemory       0X2ACF80918A8153F7ULL
+#define HASH_NtWriteVirtualMemory      0X8575358786918936ULL
+#define HASH_NtAllocateVirtualMemory   0XF2A49421250FD409ULL
+#define HASH_NtCreateThreadEx          0X1D6069E813CB80CAULL
 
 //Rtl* function hashes (resolved via GetProcAddressByHash) -----
-#define HASH_RtlCreateProcessParametersEx 0xFD9CFECB2E93AADBULL
-#define HASH_RtlDestroyProcessParameters  0x662F3246B36FF634ULL
-#define HASH_NTDLL                        0xE1193D187E7EA30DULL
+#define HASH_RtlCreateProcessParametersEx 0XC773ABB8EB82E467ULL
+#define HASH_RtlDestroyProcessParameters  0X479478740E3E0DECULL
+#define HASH_NTDLL                        0X571A46A16587BB7AULL
 
 //NT constants
 #ifndef NtCurrentProcess
