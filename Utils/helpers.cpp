@@ -27,7 +27,8 @@ void escape_json(const char *input, char *output, int out_size) {
     output[j] = '\0';
 }
 
-//Wide string to string
+/*
+//Wide string to string — DISABLED: replaced with inline wcstombs, avoids std::string in binary
 std::string WStringToString(const std::wstring& wstr) {
     if (wstr.empty()) return std::string();
     int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
@@ -35,6 +36,7 @@ std::string WStringToString(const std::wstring& wstr) {
     WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
     return strTo;
 }
+*/
 
 void CleanAndParse(char* cmd) {
     size_t len = strlen(cmd);
@@ -67,11 +69,45 @@ bool custom_wcsicmp(const wchar_t* str1, const wchar_t* str2) {
     return (*str1 == *str2);
 }
 
-//custom memory copy [avoid CRT hooks]
+//custom memory copy [avoid CRT/Hooks]
 void custom_memcpy(PVOID dest, const PVOID src, SIZE_T n) {
     char* d = (char*)dest;
     const char* s = (const char*)src;
     for (SIZE_T i = 0; i < n; i++) {
         d[i] = s[i];
+    }
+}
+
+
+SIZE_T custom_strlen(const char* str) {
+    const char* s = str;
+    while (*s) ++s;
+    return s - str;
+}
+
+
+void* custom_memset(void* dest, int val, SIZE_T count) {
+    unsigned char* ptr = (unsigned char*)dest;
+    while (count--) *ptr++ = (unsigned char)val;
+    return dest;
+}
+
+
+int custom_strcmp(const char* s1, const char* s2) {
+    while (*s1 && (*s1 == *s2)) {
+        s1++;
+        s2++;
+    }
+    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+}
+
+
+void strip_newlines(char* str) {
+    while (*str) {
+        if (*str == '\r' || *str == '\n') {
+            *str = '\0';
+            break;
+        }
+        str++;
     }
 }
