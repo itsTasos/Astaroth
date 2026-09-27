@@ -28,7 +28,7 @@ By combining dynamic syscall resolution (Hell's Gate/Halo's Gate), custom PE par
     *   No static imports. Windows APIs are resolved dynamically at runtime using custom string hashing.
     *   Implements **Hell's Gate** and **Halo's Gate** to dynamically resolve SSNs and execute direct system calls, bypassing NTDLL unhooking and user-land EDR hooks.
 *   **Strict Native Memory Management & OPSEC**
-    *   **Direct NTDLL Heap Allocation::** Bypasses standard kernel32.dll memory functions by dynamically resolving RtlAllocateHeap and RtlFreeHeap directly from the ntdll.dll subsystem.
+    *   **Direct NTDLL Heap Allocation:** Bypasses standard kernel32.dll memory functions by dynamically resolving RtlAllocateHeap and RtlFreeHeap directly from the ntdll.dll subsystem.
     *   **Stack-Exhaustion Prevention:**  Eliminates brittle stack allocations in favor of robust Native Heap management. This ensures stability during large I/O operations without triggering STATUS_STACK_OVERFLOW exceptions.
     *   **Telemetry Reduction:** By operating memory allocations at the lowest possible User-Mode layer, it evades the standard API hooking and memory-scanning telemetry associated with high-level C-Runtime (CRT) or Win32 memory APIs.
 *   **Stealth & Evasion**
